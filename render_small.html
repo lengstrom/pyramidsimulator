@@ -1,0 +1,397 @@
+<html>
+	<body>
+		<div id='canvascontainer'></div>
+
+		<style type='text/css'>
+			body {
+				background-color: #eeeeee;
+				font-family:arial;
+				-moz-user-select: none;
+				-webkit-user-select: none;
+				-ms-user-select:none;
+				user-select:none;
+				overflow:hidden;
+			}
+
+			#canvassidebar {
+				position:absolute;
+				left:730px;
+				top:8px;
+				width:230px;
+				height:500px;
+				border:solid 1px #000;
+				padding:10px;
+			}
+
+			#canvascontainer {
+				background-color:323232;
+				width:700px;
+				height:700px;
+			}
+
+			.stage2 {
+				padding:6px;
+				/*margin-top:3px;*/
+				cursor:pointer;
+				border:1px solid #000;
+			}
+
+			.stage2:hover {
+				background-color:#f2e0c1;
+			}
+
+		</style>
+		<div id='canvassidebar'>
+			<center style='margin-bottom:5px;'><b>Controls: Sections of a True Pyramid (opacity)</b></center>
+			<i>Stages/Inclined layers</i>: <input id='Accretion' type='range' max = '1' min = '0' step='.01'/><br><p></p>
+			<i>Packing limestone</i>: <input id='Outer' type='range' max = '1' min = '0' step='.01'/><br><p></p>
+			<i>Tura (casing) Limestone Finish</i>: <input id='Limestone' type='range' max = '1' min = '0' step='.01'/><br><p></p>
+			<i>Inner chambers</i>: <input id='Inner' type='range' max = '1' min = '0' step='.01'/><br><p></p>
+			<center style='margin-top:5px;margin-bottom:5px;'><b>Controls: Viewing</b></center>
+			<i>Rotation speed (low=faster)</i>: <input id='rs' type='range' max = '5000' min = '100' step='10'/><br><p></p>
+			<i>Zoom</i>: <br><input id='zoom' type='range' max = '100' min = '10' step='1'/><br><p></p>
+
+			<div class='stage2' onclick='commclose()'>Close</div>
+		</div>
+		</style>
+		<script type='text/javascript' src='three.js'></script>
+		<script type="text/javascript" src='jquery.js'></script>
+		<script type='text/javascript'>
+			$("#Accretion").change(function(){
+				colorsToMeshes['B87333'].opacity = $("#Accretion").val();
+			});
+			$("#Outer").change(function(){
+				colorsToMeshes['ad9362'].opacity = $("#Outer").val();
+			});
+			$("#Limestone").change(function(){
+				colorsToMeshes['f6f6ee'].opacity = $("#Limestone").val();
+			});
+			$("#Inner").change(function(){
+				colorsToMeshes['EEEEEE'].opacity = $("#Inner").val();
+			});
+			$("#rs").change(function(){
+				rotationSpeed = $('#rs').val();
+			});
+			$('#rs').mousedown(function(){
+				$('canvas').hide();
+			});
+			$(window).mouseup(function(){
+				$('canvas').show();
+			});
+			$("#zoom").change(function(){
+				zoom = $('#zoom').val();
+			});
+		</script>
+		<!--<script type='text/javascript' src='zdata.js'></script> -->
+		<script type="text/javascript">
+			//todo: fog / bg?
+			function commclose() {
+				parent.unmodel();
+			}
+			function renderIt(dataToRender,ang) {
+				console.log(dataToRender);
+				var deg = ang;
+				window.zoom = 40;
+				window.rotationSpeed = 1750;
+				var yScale = Math.tan(deg*(Math.PI/180));
+				yScale = (Math.round(yScale * 100)/100);
+
+				window.requestAnimFrame = (function(){
+					return  window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function( callback ){window.setTimeout(callback, 22);
+					};
+				})();
+
+				// set the scene size
+				var w = 700, h = 700;
+				var halfWidth = window.innerWidth/2, halfHeight = window.innerHeight/2;
+
+				// set some camera attributes
+				var viewAngle = 45, aspect = w / h, near = 0.1, far = 10000;
+
+				// get the DOM element to attach to
+				// - assume we've got jQuery to hand
+				var $canvascontainer = $('#canvascontainer');
+
+				// create a WebGL renderer, camera
+				// and a scene
+				var renderer = new THREE.WebGLRenderer({antialias: true});
+				renderer.sortObjects = false;
+				renderer.setClearColorHex(0x323232, 1.0);
+				renderer.clear();
+				// enable shadows on the renderer
+				renderer.shadowMapEnabled = true;
+
+				var camera = new THREE.PerspectiveCamera(viewAngle,aspect,near,far);
+
+				var scene = new THREE.Scene();
+
+				// add the camera to the scene
+				scene.add(camera);
+				window.largecubes = []
+				// the camera starts at 0,0,0
+				// so pull it back
+				camera.position.z = 300;
+
+				// start the renderer
+				renderer.setSize(w, h);
+
+				// attach the render-supplied DOM element
+				$canvascontainer.append(renderer.domElement);
+				mouseX = 0;
+				mouseY = 0;
+				$(window).mousemove(function(){
+					mouseX = event.clientX - halfWidth;
+					mouseY = event.clientY - halfHeight;
+				})
+
+				var light = new THREE.SpotLight();
+				light.intensity = 1;
+				light.position.set( 100, 100, 0 );
+				// var ambientLight = new THREE.AmbientLight(0x404040);
+
+				scene.add(light);
+				// var light2 = new THREE.SpotLight();
+				// light2.position.set( -170, 330, 160 );
+				// enable shadows for a light
+				// light.castShadow = true;
+
+				largestX = 0;
+				largestY = 0;
+
+				window.colorsToMeshes = {
+					'f6f6ee':new THREE.MeshLambertMaterial({color:0xf3f4ea,transparent:true}),
+					'ad9362':new THREE.MeshLambertMaterial({color:0xad9362,transparent:true}),
+					'B87333':new THREE.MeshLambertMaterial({color:0x804000,transparent:true}),
+					'EEEEEE':new THREE.MeshLambertMaterial({color:0xEEEEEE,transparent:true})
+				}
+
+				
+
+				largestZ = dataToRender['rects'].length - 1;
+				for (var i in dataToRender['rects']) {
+					if (dataToRender['rects'][i]['x1']['y'] > largestY) {
+						largestY = dataToRender['rects'][i]['x1']['y'];
+					}
+					if (dataToRender['rects'][i]['x2']['y'] > largestY) {
+						largestY = dataToRender['rects'][i]['x2']['y'];
+					}
+					if (dataToRender['rects'][i]['y1']['x'] > largestX) {
+						largestX = dataToRender['rects'][i]['y1']['x'];
+					}
+					if (dataToRender['rects'][i]['y2']['x'] > largestX) {
+						largestX = dataToRender['rects'][i]['y2']['x'];
+					}
+				}
+
+				for (var i in dataToRender['spaces']) {
+					makeCube(dataToRender['spaces'][i]['x'],dataToRender['spaces'][i]['y'],dataToRender['spaces'][i]['z']);
+				}
+
+
+				addLargeBlocks();
+
+				//sx,ex,sy,ey,z,c
+				//e
+				for (var rp = 0; rp < dataToRender['rects'].length; rp++) {
+					for (i = 0; i < 4; i++) {
+						addLitRectPrism(i,dataToRender['rects'][rp]['x2']['s']+1,dataToRender['rects'][rp]['x2']['e']+1,dataToRender['rects'][rp]['x2']['y'],-2,rp,'ad9362');
+						addLitRectPrism(i,dataToRender['rects'][rp]['y1']['x'],-1,dataToRender['rects'][rp]['y1']['s']+1,dataToRender['rects'][rp]['y1']['e']+1,rp,'ad9362');
+						addLitRectPrism(i,dataToRender['rects'][rp]['y2']['x'],-2,dataToRender['rects'][rp]['y2']['s'],dataToRender['rects'][rp]['y2']['e'],rp,'ad9362');
+						addLitRectPrism(i,dataToRender['rects'][rp]['x1']['s'],dataToRender['rects'][rp]['x1']['e'],dataToRender['rects'][rp]['x1']['y'],-1,rp,'ad9362');
+					}
+					
+				}
+
+				function addLitRectPrism(it,sx,ex,sy,ey,z,c) {
+					if (ex == -1) {
+						var litCube = new THREE.Mesh(new THREE.CubeGeometry(.25, .25 * yScale, Math.abs(sy-ey) + it/2), colorsToMeshes[c]);
+						litCube.position.z = -(sy - (1 - Math.abs(sy-ey))/2) + largestY/2;
+						litCube.position.x = -(sx) + largestX/2 - (1 - it/4) + .4;
+						litCube.position.y = (z + (1 - it/4) - 1) * yScale;
+					}
+					if (ex == -2) {
+						var litCube = new THREE.Mesh(new THREE.CubeGeometry(.25, .25 * yScale, Math.abs(sy-ey) + it/2), colorsToMeshes[c]);
+						litCube.position.z = -(sy - (1 - Math.abs(sy-ey))/2) + largestY/2 - 1;
+						litCube.position.x = -(sx) + largestX/2 - it/4 - .4;
+						litCube.position.y = (z - it/4) * yScale;
+					}
+					if (ey == -1) {
+						var litCube = new THREE.Mesh(new THREE.CubeGeometry(Math.abs(sx-ex) + it/2, .25 * yScale, .25), colorsToMeshes[c]);
+						litCube.position.z = -(sy) + largestY/2 - (1-it/4) + .4;
+						litCube.position.x = -(sx - (1 - Math.abs(sx-ex))/2) + largestX/2 -1;
+						litCube.position.y = (z - it/4) * yScale;
+					}
+
+					if (ey == -2) {
+						var litCube = new THREE.Mesh(new THREE.CubeGeometry(Math.abs(sx-ex) + it/2, .25 * yScale, .25), colorsToMeshes[c]);
+						litCube.position.z = -(sy) + largestY/2 - it/4 - .4;
+						litCube.position.x = -(sx - (1 - Math.abs(sx-ex))/2) + largestX/2;
+						litCube.position.y = (z - it/4) * yScale;
+					}
+
+					scene.add(litCube);
+				}
+
+				// function addLargeBlocks(){
+				// 	for (var largeRow = 0; largeRow < dataToRender['rects'].length; largeRow++) {
+				// 		if (largeRow % 2) {
+				// 			addLargeLitRectPrism(dataToRender['rects'][largeRow]['x1']['s'],dataToRender['rects'][largeRow]['x1']['e'],dataToRender['rects'][largeRow]['x1']['y'],-1,largeRow,'B87333');
+				// 			addLargeLitRectPrism(dataToRender['rects'][largeRow]['x2']['s']+1,dataToRender['rects'][largeRow]['x2']['e']+1,dataToRender['rects'][largeRow]['x2']['y'],-1,largeRow,'B87333');
+				// 			addLargeLitRectPrism(dataToRender['rects'][largeRow]['y1']['x'],-1,dataToRender['rects'][largeRow]['y1']['s']+1,dataToRender['rects'][largeRow]['y1']['e']+1,largeRow,'B87333');
+				// 			addLargeLitRectPrism(dataToRender['rects'][largeRow]['y2']['x'],-1,dataToRender['rects'][largeRow]['y2']['s'],dataToRender['rects'][largeRow]['y2']['e'],largeRow,'B87333');
+				// 		}
+				// 	}
+				// }
+
+
+				function makeCube(tx,ty,tz) {
+					var litCube = new THREE.Mesh(new THREE.CubeGeometry(1,1 * yScale,1), colorsToMeshes['EEEEEE']);
+					litCube.position.z = -(ty) + largestX/2 - .5;
+					litCube.position.x = -(tx) + largestX/2 - .5;
+					litCube.position.y = tz * yScale;
+					scene.add(litCube);
+				}
+
+				function makeCasingTransparent(op) {
+					colorsToMeshes['ad9362'].transparent = true;
+					colorsToMeshes['ad9362'].opacity = op;
+				}
+
+				function addLargeBlocks(){
+					for (var largeRow = 0; largeRow < dataToRender['rects'].length; largeRow++) {
+						if (largeRow % 2) {
+							addLargeLitRectPrism(largeRow,dataToRender['rects'][largeRow]['x1']['s'],dataToRender['rects'][largeRow]['x1']['e'],dataToRender['rects'][largeRow]['x1']['y'],-1,largeRow,'B87333');
+							addLargeLitRectPrism(largeRow,dataToRender['rects'][largeRow]['x2']['s']+1,dataToRender['rects'][largeRow]['x2']['e']+1,dataToRender['rects'][largeRow]['x2']['y'],-2,largeRow,'B87333');
+							addLargeLitRectPrism(largeRow,dataToRender['rects'][largeRow]['y1']['x'],-1,dataToRender['rects'][largeRow]['y1']['s']+1,dataToRender['rects'][largeRow]['y1']['e']+1,largeRow,'B87333');
+							addLargeLitRectPrism(largeRow,dataToRender['rects'][largeRow]['y2']['x'],-2,dataToRender['rects'][largeRow]['y2']['s'],dataToRender['rects'][largeRow]['y2']['e'],largeRow,'B87333');
+						}
+					}
+				}
+
+				function addLargeLitRectPrism(s,sx,ex,sy,ey,z,c) {
+					if (ex == -1) {
+						var litCube = new THREE.Mesh(new THREE.CubeGeometry(2.5, 2 * yScale, Math.abs(sy-ey) + .8), colorsToMeshes[c]);
+						// litCube.CubeGeometry.vertices
+						litCube.position.z = -(sy - (1 - Math.abs(sy-ey))/2) + largestY/2 + .05;
+						litCube.position.x = -(sx) + largestX/2 - 0.85;
+						litCube.geometry.vertices[0].setX(litCube.geometry.vertices[0].x-.6);
+						litCube.geometry.vertices[1].setX(litCube.geometry.vertices[1].x-.6);
+						litCube.position.y = z * yScale - 2 * yScale;
+					}
+					
+					if (ex == -2) {
+						var litCube = new THREE.Mesh(new THREE.CubeGeometry(2.5, 2 * yScale, Math.abs(sy-ey) + .8), colorsToMeshes[c]);
+						// litCube.CubeGeometry.vertices
+						litCube.position.z = -(sy - (1 - Math.abs(sy-ey))/2) + largestY/2 - 1;
+						litCube.position.x = -(sx) + largestX/2 - 0.35;
+						litCube.position.y = z * yScale - 2 * yScale;
+						litCube.geometry.vertices[5].setX(litCube.geometry.vertices[5].x + .6);
+						litCube.geometry.vertices[4].setX(litCube.geometry.vertices[4].x + .6);
+					}
+
+					
+					if (ey == -1) {
+						var litCube = new THREE.Mesh(new THREE.CubeGeometry(Math.abs(sx-ex) + .8, 2 * yScale, 2.5), colorsToMeshes[c]);
+						litCube.position.z = -(sy) + largestY/2 - .75;
+						litCube.position.x = -(sx - (1 - Math.abs(sx-ex))/2) + largestX/2 - 1.1;
+						litCube.position.y = z * yScale - 2 * yScale;
+						console.log(litCube.geometry.vertices[0],litCube.geometry.vertices[5]);
+						debugger;
+						litCube.geometry.vertices[0].setZ(litCube.geometry.vertices[0].z - .6);
+						litCube.geometry.vertices[5].setZ(litCube.geometry.vertices[5].z - .6);
+						largecubes.push(litCube);
+						// litCube.rotation.x = 3;
+					}
+
+					if (ey == -2) {
+						var litCube = new THREE.Mesh(new THREE.CubeGeometry(Math.abs(sx-ex) + .8, 2 * yScale, 2.5), colorsToMeshes[c]);
+						litCube.position.z = -(sy) + largestY/2 - .25;
+						litCube.position.x = -(sx - (1 - Math.abs(sx-ex))/2) + largestX/2 - 0.1;
+						litCube.position.y = z * yScale - 2 * yScale;
+						console.log(litCube.geometry.vertices[0],litCube.geometry.vertices[5]);
+						litCube.geometry.vertices[4].setZ(litCube.geometry.vertices[4].z + .6);
+						litCube.geometry.vertices[1].setZ(litCube.geometry.vertices[1].z + .6);
+						largecubes.push(litCube);
+						// litCube.rotation.x = 3;
+					}
+
+					// litCube.castShadow = true;
+					// litCube.receiveShadow = true;
+					scene.add(litCube);
+				}
+
+				function makeOpaque() {
+					colorsToMeshes['f6f6ee'].transparent = false;
+					colorsToMeshes['f6f6ee'].opacity = 1;
+					colorsToMeshes['ad9362'].transparent = false;
+					colorsToMeshes['ad9362'].opacity = 1;
+				}
+
+				function showPyramid() {
+					var pyramidGeometry = new THREE.CylinderGeometry( 0, (largestX + largestX/2)/2 + 1, (largestZ + 1.3 + (largestZ/32)) * yScale, 4, 1, 1);
+					var pyramidMaterial =  colorsToMeshes['f6f6ee']; /*f6f6ee*/
+					var pyramidMesh = new THREE.Mesh( pyramidGeometry, pyramidMaterial );
+					pyramidMesh.position.y = ((largestZ + 1.3 + (largestZ/32))/2 - .5)* yScale;
+					pyramidMesh.position.x = -.5;
+					pyramidMesh.position.z = -.5;
+					pyramidMesh.rotation.y = Math.PI/4
+					scene.add(pyramidMesh)
+
+				}
+
+				// makeCube(0,0,0);
+
+				// litCube.position.z = 0;
+				// litCube.position.x = ;
+				// litCube.position.y = 0;
+				// scene.add(litCube);
+
+				function animate(t) {
+					// spin the camera in a circle
+					camera.position.x = Math.cos(t/rotationSpeed) * 50; //t/rotationSpeed
+					camera.position.y = 50;
+					camera.position.z = Math.sin(t/rotationSpeed) * 50; //t/rotationSpeed
+					camera.fov = zoom;
+					camera.updateProjectionMatrix();
+					// camera.position.x = 40;
+					// camera.position.y = largestZ;
+					// camera.position.z = 40;
+
+					camera.lookAt(scene.position);
+
+					// you need to update lookAt every frame
+					// camera.lookAt(scene.position);
+					// renderer automatically clears unless autoClear = false
+					renderer.render(scene, camera);
+					// camera.position.x = 300;
+					// camera.position.y = 150;
+					// camera.position.z = 300;
+					// // you need to update lookAt every frame
+					// camera.lookAt(scene.position);
+					// // renderer automatically clears unless autoClear = false
+					// renderer.render(scene, camera);
+				};
+
+				// makeTransparent(.75);
+				showPyramid();
+				(function animloop(){
+					animate(new Date().getTime());
+					requestAnimFrame(animloop);
+				})();
+
+				colorsToMeshes['B87333'].opacity = .35;
+				$("#Accretion").val(colorsToMeshes['B87333'].opacity);
+				colorsToMeshes['ad9362'].opacity = .35;
+				$("#Outer").val(colorsToMeshes['ad9362'].opacity);
+				colorsToMeshes['f6f6ee'].opacity = .35;
+				$("#Limestone").val(colorsToMeshes['f6f6ee'].opacity);
+				colorsToMeshes['EEEEEE'].opacity = .35;
+				$("#Inner").val(colorsToMeshes['EEEEEE'].opacity);
+				$("#rs").val(rotationSpeed);
+				$("#zoom").val(zoom);
+			}
+
+			renderIt(parent.dtr,parent.theAngle);
+		</script>
+	</body>
+</html>

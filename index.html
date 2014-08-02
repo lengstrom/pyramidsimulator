@@ -1,0 +1,636 @@
+<html>
+	<head>
+		<style type='text/css'>
+			body {
+				background-color: #eeeeee;
+				font-family:arial;
+				-moz-user-select: none;
+				-webkit-user-select: none;
+				-ms-user-select:none;
+				user-select:none;
+				overflow:hidden;
+			}
+
+			#container {
+				position:absolute;
+				top:49px;
+				left:10px;
+				width:512px; 
+				height:512px;
+				background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABAAQMAAACQp+OdAAAABlBMVEXMzMz////TjRV2AAAAGklEQVR4AWNkYPjPwAjEg4UBpQYLYzR88DMAZmCAIXOGS9AAAAAASUVORK5CYII=) repeat;
+				border-right:2px #000 solid;
+				border-bottom:2px #000 solid;
+			}
+
+			.sqr {
+				position: absolute;
+				border-left:solid #000 1px;
+				border-top:solid #000 1px;
+			}
+
+			#sidebar {
+				position:absolute;
+				left:540px;
+				top:49px;
+				width:200px;
+				height:700px;
+				border:solid 1px #000;
+				padding:10px;
+			}
+
+			#restartsidebar {
+				position:absolute;
+				left:800px;
+				top:49px;
+				width:150px;
+				height:700px;
+				border:solid 1px #000;
+				padding:10px;
+			}
+
+			.setStone {
+				float:left;
+				width:16px;
+				height:16px;
+				border:solid #000 1px;
+			}
+
+			.setStoneText {
+				/*display:inline;*/
+				/*cursor: pointer;*/
+				margin-left:3px;
+			}
+
+			.stage {
+				padding:6px;
+				/*margin-top:3px;*/
+				cursor:pointer;
+				border-top:1px solid #000;
+				border-left:1px solid #000;
+				border-right:1px solid #000;
+				border-bottom:1px solid #000;
+				margin-bottom: 3px;
+			}
+
+			.stage:hover {
+				background-color:#f2e0c1;
+			}
+
+			.stage2 {
+				padding:6px;
+				/*margin-top:3px;*/
+				cursor:pointer;
+				border-top:1px solid #000;
+				border-left:1px solid #000;
+				border-right:1px solid #000;
+			}
+
+			.stage2:hover {
+				background-color:#f2e0c1;
+			}
+
+			.activeLayer {
+				background-color:#f2e0c1;
+			}
+
+			#stages {
+				overflow: scroll;
+				padding-left:6px;
+				padding-top:3px;
+				width:192px;
+				border:1px solid #000;
+				height:100%;
+				padding-bottom: 0px;
+				background-color:#eee;
+			}
+
+			#canvassidebar {
+				position:absolute;
+				left:730px;
+				top:8px;
+				width:200px;
+				height:500px;
+				border:solid 1px #000;
+				padding:10px;
+			}
+
+			#canvascontainer {
+				background-color:323232;
+				width:700px;
+				height:700px;
+			}
+
+			.stage2 {
+				padding:6px;
+				/*margin-top:3px;*/
+				cursor:pointer;
+				border-top:1px solid #000;
+				border-left:1px solid #000;
+				border-right:1px solid #000;
+			}
+
+			.stage2:hover {
+				background-color:#f2e0c1;
+			}
+
+		</style>
+	</head>
+	<body oncontextmenu='return false;'>
+		<h1>Pyramid Simulator</h1>
+		<div id='container'>
+		</div>
+		<div style='position:absolute;top:20px;left:20px;z-index:10;background-color:#eeeeee;border:1px #000 solid;' id='rendercont'>
+			
+		</div>
+		<div id='sidebar'>
+			<center style='margin-bottom:5px;'><b>Key</b></center>
+			<div style='padding:3px;' id ='tulsaLimestoneCont'><div id ='settulsaLimestone' class = 'setStone' style='background-color:#f6f6ee;'></div><div class='setStoneText'>&nbsp;Tura Limestone</div></div>
+			<div style='padding:3px;' id ='cutLimestoneCont'><div id ='setcutLimestone' class = 'setStone' style='background-color:#f2e0c1;'></div><div class='setStoneText'>&nbsp;Casing Limestone</div></div>
+			
+			<center style='margin-bottom:5px;'><b>Controls (opacity)</b></center>
+			<div style='padding:3px;' onclick='builder.setActiveStone("roughLimestone","roughLimestoneCont")' id ='roughLimestoneCont'><div id ='setroughLimestone' class = 'setStone' style='background-color:#ad9362;cursor:pointer;'></div><div style='cursor:pointer;' class='setStoneText'>&nbsp;Packing Limestone</div></div>
+			
+			<div style='padding:3px;' onclick='builder.setActiveStone("hollow","hollowCont")' id ='hollowCont'><div id ='sethollow' class = 'setStone' style='background-color:#000;cursor:pointer;'></div><div class='setStoneText' style='cursor:pointer;'>&nbsp;Hollow Area (inner chambers)</div></div>
+
+			<center style='margin-bottom:5px;margin-top:20px;'><b>Layers</b></center>
+			<div style='height:260px;width:198px;'>
+				<div id='stages'>
+				</div>
+			</div>
+			<br>
+			<span style='color:rgba(240,30,60,1)'>Red</span> = outside pyramid <br>
+			One block = ~4 blocks in real pyramid (Smith 2006)
+			<br>
+			Hold "alt" and click in order to delete blocks that are otherwise undeletable, like casing and tura limestone blocks.
+			<p></p>
+			<div class='stage2' onclick = 'model()' style='border-bottom:#000 1px solid;'>Make Pyramid</div>
+
+		</div>
+
+
+
+		<script type="text/javascript" src='js/jquery.js'></script>
+		<script type="text/javascript" src='js/three.js'></script>
+		<script type="text/javascript">
+			// baseSize = 32;
+			// ang = 45;baseSize = prompt('What base size do you want your pyramid to be? (Choose between 10 and 32');
+			
+			var colorsToTypes = {
+				tulsaLimestone:"#f6f6ee",	//casing
+				cutLimestone:"#f2e0c1",		//packing
+				roughLimestone:"#ad9362",	//accretion
+				granite:"#979487",
+				hollow:'#000'			//pillars + roofing
+			};
+
+			function commclose() {
+				window.hideModel();
+			}
+
+			$("#Accretion").change(function(){
+				colorsToMeshes['B87333'].opacity = $("#Accretion").val();
+			});
+			$("#Outer").change(function(){
+				colorsToMeshes['ad9362'].opacity = $("#Outer").val();
+			});
+			$("#Limestone").change(function(){
+				colorsToMeshes['f6f6ee'].opacity = $("#Limestone").val();
+			});
+			$("#Inner").change(function(){
+				colorsToMeshes['EEEEEE'].opacity = $("#Inner").val();
+			});
+			$("#rs").change(function(){
+				rotationSpeed = $('#rs').val();
+			});
+			$('#rs').mousedown(function(){
+				$('canvas').hide();
+			});
+			$(window).mouseup(function(){
+				$('canvas').show();
+			});
+			$("#zoom").change(function(){
+				zoom = $('#zoom').val();
+			});
+
+			function grid(max) { //should only be in mults of 2?
+				var res = 16; //x / y height of the squares in pixels
+				var activeStone = '';
+				var invCorns = {
+					l:'r',
+					t:'b',
+					r:'l',
+					b:'t'
+				}
+
+				this.stages = []; //format:
+				/*
+
+					{data,{x,y,z,type},html:}
+
+				*/
+				for (var row = 0; row < Math.ceil(max/2); row++) {
+					$('#stages').append("<div class = 'stageCont' id = '" + row + "stage' style='width:186px;height:30px;'><div class = 'stage' onclick='builder.loadStage(" + row + ")'>Stage " + String(row + 1) + "</div></div>");
+				}
+
+				window.activeClick = -1;
+				window.downBlock = -1; //block originally clicked 
+				window.overBlock = -1; //block on which there is a mouse over
+				this.activeStage = -1;
+
+				this.setActiveStone = function(stone,buttonID) {
+					$('#' + activeStone + 'Cont').css("border","")
+					activeStone = stone;
+					$("#" + buttonID).css("border","#000 1px solid");
+				};
+
+				this.exportData = function(stageNum) {
+					var stageData = [];
+					$(".rsqr").each(function(){
+						stageData.push({
+							x:parseInt(this.getAttribute('x')),
+							y:parseInt(this.getAttribute('y')),
+							type:this.style.backgroundColor
+						});
+					});
+					this.stages[stageNum] = {data:stageData,html:document.getElementById('container').innerHTML};
+				};
+
+				this.export3D = function() {
+					var zdata = {spaces:[],rects:[]};
+					for (var z = 0; z < this.stages.length; z++) {
+						zdata['rects'][z] = {x1:{e:0,s:999},x2:{e:0,s:999},y1:{e:0,s:999},y2:{e:0,s:999}};
+						var last = {};
+						for (var ablock = 0; ablock < this.stages[z]['data'].length; ablock++) {
+							this.stages[z]['data'][ablock]['x'] = parseInt(this.stages[z]['data'][ablock]['x']);
+							this.stages[z]['data'][ablock]['y'] = parseInt(this.stages[z]['data'][ablock]['y']);
+							if (this.stages[z]['data'][ablock]['type'] == "rgb(0, 0, 0)") {
+								zdata['spaces'].push({
+									x:this.stages[z]['data'][ablock]['x'],
+									y:this.stages[z]['data'][ablock]['y'],
+									z:z
+								})
+							}
+							if (this.stages[z]['data'][ablock]['x'] == z || this.stages[z]['data'][ablock]['y'] == z || this.stages[z]['data'][ablock]['x'] == max - 1 - z || this.stages[z]['data'][ablock]['y'] == max - 1 - z) {
+							
+								if (this.stages[z]['data'][ablock]['x'] == z) {
+									var axis = 'y1';
+									var oAxis = (axis.substring(0,1) == 'x') ? 'y' : 'x';
+									if (this.stages[z]['data'][ablock][axis.substring(0,1)] < zdata['rects'][z][axis]['s']) {
+										zdata['rects'][z][axis]['s'] = this.stages[z]['data'][ablock][axis.substring(0,1)];
+										zdata['rects'][z][axis][oAxis] = this.stages[z]['data'][ablock][oAxis];
+									}
+
+									if (this.stages[z]['data'][ablock][axis.substring(0,1)] > zdata['rects'][z][axis]['e']) {
+										zdata['rects'][z][axis]['e'] = this.stages[z]['data'][ablock][axis.substring(0,1)];
+										zdata['rects'][z][axis][oAxis] = this.stages[z]['data'][ablock][oAxis];
+									}
+								}
+								
+								if (this.stages[z]['data'][ablock]['y'] == z) {
+									axis = 'x1';
+									oAxis = (axis.substring(0,1) == 'x') ? 'y' : 'x';
+									if (this.stages[z]['data'][ablock][axis.substring(0,1)] < zdata['rects'][z][axis]['s']) {
+										zdata['rects'][z][axis]['s'] = this.stages[z]['data'][ablock][axis.substring(0,1)];
+										zdata['rects'][z][axis][oAxis] = this.stages[z]['data'][ablock][oAxis];
+									}
+
+									if (this.stages[z]['data'][ablock][axis.substring(0,1)] > zdata['rects'][z][axis]['e']) {
+										zdata['rects'][z][axis]['e'] = this.stages[z]['data'][ablock][axis.substring(0,1)];
+										zdata['rects'][z][axis][oAxis] = this.stages[z]['data'][ablock][oAxis];
+									}
+								}
+									
+								if (this.stages[z]['data'][ablock]['x'] == max - 1 - z) {
+									axis = 'y2';
+									oAxis = (axis.substring(0,1) == 'x') ? 'y' : 'x';
+									if (this.stages[z]['data'][ablock][axis.substring(0,1)] < zdata['rects'][z][axis]['s']) {
+										zdata['rects'][z][axis]['s'] = this.stages[z]['data'][ablock][axis.substring(0,1)];
+										zdata['rects'][z][axis][oAxis] = this.stages[z]['data'][ablock][oAxis];
+									}
+
+									if (this.stages[z]['data'][ablock][axis.substring(0,1)] > zdata['rects'][z][axis]['e']) {
+										zdata['rects'][z][axis]['e'] = this.stages[z]['data'][ablock][axis.substring(0,1)];
+										zdata['rects'][z][axis][oAxis] = this.stages[z]['data'][ablock][oAxis];
+									}
+								}
+							
+								if (this.stages[z]['data'][ablock]['y'] == max - 1 - z) {
+									axis = 'x2';
+									oAxis = (axis.substring(0,1) == 'x') ? 'y' : 'x';
+									if (this.stages[z]['data'][ablock][axis.substring(0,1)] < zdata['rects'][z][axis]['s']) {
+										zdata['rects'][z][axis]['s'] = this.stages[z]['data'][ablock][axis.substring(0,1)];
+										zdata['rects'][z][axis][oAxis] = this.stages[z]['data'][ablock][oAxis];
+									}
+
+									if (this.stages[z]['data'][ablock][axis.substring(0,1)] > zdata['rects'][z][axis]['e']) {
+										zdata['rects'][z][axis]['e'] = this.stages[z]['data'][ablock][axis.substring(0,1)];
+										zdata['rects'][z][axis][oAxis] = this.stages[z]['data'][ablock][oAxis];
+									}
+								}
+							}
+						}
+					}
+
+					return zdata
+				};
+
+				this.loadStage = function(snum) {
+					if (this.activeStage != -1) {
+						this.exportData(this.activeStage);
+					}
+
+					if(this.stages[snum] != undefined) {
+						$("#container").html(this.stages[snum]['html']);
+						this.setHandlers();
+					}
+
+					else {
+						this.init(max - snum);
+					}
+					if (this.activeStage != -1) {
+						$('#' + this.activeStage + 'stage').css('background-color',"rgba(0,0,0,0)");
+					}
+
+					$('#' + snum + 'stage').css("background-color",'#f2e0c1');
+					this.activeStage = snum;
+				};
+
+				this.init = function(num) {
+					var htmlToAppend = '';
+					for (var x = 0; x < max; x++) {
+						for (var y = 0; y < max; y++) {
+							var isBlockBg = (x < (max - num + 4) || y < (max - num + 4) || x >= max - (max - num) - 4|| y >= max - (max - num) - 4) ? "rgba(240,30,60,1)" : "rgba(0,0,0,0.0)";
+							if (isBlockBg == 'rgba(240,30,60,1)') {
+								isBlockBg = (x >= (max - num) + 1|| y >= (max - num) + 1|| x >= max - (max - num) - 2 || y >= max - (max - num) - 2) ? "rgb(242, 224, 193)" : "rgba(240,30,60,1)";
+							}
+
+							var blockClass = (x < (max - num + 4) || y < (max - num + 4) || x >= max - (max - num) - 4|| y >= max - (max - num) - 4) ? "sqr" : "sqr wsqr rsqr";
+
+							if (blockClass == 'sqr') {
+								blockClass = (x >= (max - num) + 1 || y >= (max - num) + 1 || x >= max - (max - num) - 2 || y >= max - (max - num) - 2) ? "rsqr sqr" : "sqr";
+							}
+
+							/////////
+
+
+							isBlockBg = (x < (max - num + 1) || y < (max - num + 1) || x >= max - (max - num) - 1|| y >= max - (max - num) - 1) ? "rgba(240,30,60,1)" : isBlockBg;
+							if (isBlockBg == 'rgba(240,30,60,1)') {
+								isBlockBg = (x == (max - num) || y == (max - num) || x == max - (max - num) - 1 || y == max - (max - num) - 1) ? "rgb(246, 246, 238)" : isBlockBg;
+							}
+
+							blockClass = (x < (max - num + 1) || y < (max - num + 1) || x >= max - (max - num) - 1|| y >= max - (max - num) - 1) ? "sqr" : blockClass;
+
+							if (blockClass == 'sqr') {
+								blockClass = (x == (max - num) || y == (max - num) || x == max - (max - num) - 1 || y == max - (max - num) - 1) ? "rsqr sqr" : blockClass;
+							}
+
+							isBlockBg = (x < (max - num) || y < (max - num) || x >= max - (max - num) || y >= max - (max - num)) ? "rgba(240,30,60,1)" : isBlockBg;
+							blockClass = (x < (max - num) || y < (max - num) || x >= max - (max - num) || y >= max - (max - num)) ? "sqr" : blockClass;
+							htmlToAppend = htmlToAppend + '<div id = "x' + x + 'y' + y + '" class = "' + blockClass + '" x = "' + x + '" y = "' + y + '" style="margin-left:' + x * res + 'px;margin-top:' + y * res + 'px;height:' + res + 'px;width:' + res + 'px;background-color:' + isBlockBg + ';"></div>';							
+						}
+					}
+
+					$("#container").html(htmlToAppend);
+					this.setHandlers();
+				};
+
+				this.setHandlers = function(){
+					$('.rsqr').mousedown(function(e){
+						if (e.altKey) {
+							$(this).css('background-color', 'rgba(0,0,0,1)');
+						}
+					});
+
+					$(".wsqr").mousedown(function(e){
+						if (e.altKey) {
+							$(this).css('background-color', 'rgba(0,0,0,1)');
+						}
+						else {
+							$(this).css('background-color', colorsToTypes[activeStone]);
+							activeClick = {
+								x:e.clientX - 10,
+								y:e.clientY - 49
+							};
+							downBlock = {x:parseInt(this.getAttribute('x')),y:parseInt(this.getAttribute('y'))};
+						}
+					});
+					
+					$(".wsqr").mousemove(function(e){
+						overBlock = {x:parseInt(this.getAttribute('x')),y:parseInt(this.getAttribute('y'))};
+						if (activeClick != -1) {
+							var aY = e.clientY - 49;
+							var aX = e.clientX - 10;
+							var xPos = aX > activeClick['x'] ? 'r' : 'l';
+							var yPos = aY > activeClick['y'] ? 'b' : 't';
+							var corners = {};
+							corners[yPos + xPos] = {x:aX,y:aY};
+							corners[invCorns[yPos] + invCorns[xPos]] = activeClick;
+							corners[yPos + invCorns[xPos]] = {x:activeClick['x'],y:aY};
+							corners[invCorns[yPos] + xPos] = {x:aX,y:activeClick['y']};
+							var horizontal = 0;
+							if (downBlock['y'] == overBlock['y']) {
+								horizontal = 1;
+							}
+
+							var verticle = 0;
+							if (downBlock['x'] == overBlock['x']) {
+								verticle = 1;
+							}
+
+							maxX = downBlock['x'] >= overBlock['x'] ? downBlock['x'] : overBlock['x'];
+							maxY = downBlock['y'] >= overBlock['y'] ? downBlock['y'] : overBlock['y'];
+							minX = downBlock['x'] <= overBlock['x'] ? downBlock['x'] : overBlock['x'];
+							minY = downBlock['y'] <= overBlock['y'] ? downBlock['y'] : overBlock['y'];
+
+							$('.wsqr').each(function(){
+								if (this.prevColor) {
+									this.style.backgroundColor = this.prevColor;
+								}
+								var filled = 0;
+								var top = parseInt(this.style.marginTop);
+								var left = parseInt(this.style.marginLeft);
+								var points = [{x:left,y:top},{x:left+res,y:top},{x:left+res,y:top+res},{x:left,y:top+res}];
+								
+								if (horizontal == 1) {
+									if (parseInt(this.getAttribute('x')) >= minX && parseInt(this.getAttribute('x')) <= maxX && parseInt(this.getAttribute('y')) == downBlock['y']) {
+										this.prevColor = this.style.backgroundColor;
+										this.style.backgroundColor = colorsToTypes[activeStone];
+										filled = 1;
+									}						
+								}
+
+								if (verticle == 1 && filled == 0) {
+									if (parseInt(this.getAttribute('y')) >= minY && parseInt(this.getAttribute('y')) <= maxY && parseInt(this.getAttribute('x')) == downBlock['x']) {
+										this.prevColor = this.style.backgroundColor;
+										this.style.backgroundColor = colorsToTypes[activeStone];
+										filled = 1;
+									}						
+								}
+
+								if (filled == 0) {
+									for (var p = 0; p < 4; p++) {
+										if (points[p]['x'] >= corners['tl']['x'] && points[p]['x'] <= corners['tr']['x'] && points[p]['y'] >= corners['tl']['y'] && points[p]['y'] <= corners['bl']['y']) {
+											this.prevColor = this.style.backgroundColor;
+											this.style.backgroundColor = colorsToTypes[activeStone];
+											filled = 1;
+											break;
+										}
+									}
+								}
+
+								if (filled == 0) {
+									for (var bp in corners) {
+										if (corners[bp]['x'] >= points[0]['x'] && corners[bp]['x'] <= points[1]['x'] && corners[bp]['y'] >= points[0]['y'] && corners[bp]['y'] <=points[3]['y']) {
+											this.prevColor = this.style.backgroundColor;
+											this.style.backgroundColor = colorsToTypes[activeStone];
+											break;
+										}
+									}
+								}
+							});
+						}
+					});
+
+					$(window).mouseup(function(e){
+						activeClick = -1;
+						downBlock = -1;
+						overBlock = -1;
+						$('.wsqr').each(function(){
+							if (this.prevColor) {
+								this.prevColor = undefined;
+							}
+						});
+						if (builder.activeStage != -1) {
+							builder.exportData(builder.activeStage)
+						}
+					});
+				}
+			}
+
+			function model() {
+				$('#container').hide();
+				$('#sidebar').hide();
+				$("h1").hide()
+				$('#rendercont').show();
+				window.dtr = builder.export3D();
+				window.theAngle = ang;
+				$('#rendercont').html('<iframe id="renderframe" width="1050" height="700" src="render_small.html"></iframe>');
+			}
+
+			function modelCustom(wow,anangle) {
+				$('#container').hide();
+				$('#sidebar').hide();
+				$("h1").hide()
+				$('#rendercont').show();
+				window.dtr = wow;
+				window.theAngle = anangle;
+				$('#rendercont').html('<iframe id="renderframe" width="1050" height="700" src="render_small.html"></iframe>');
+			}
+
+			function unmodel() {
+				$('#container').show();
+				$('#sidebar').show();
+				$("h1").show()
+				$('#rendercont').hide();
+				$('#rendercont').html('');
+			}
+
+
+			$('#rendercont').hide();
+
+			baseSize = prompt('What base size do you want your pyramid to have? (Choose between 20 and 32');
+
+			if (baseSize < 20) {
+				baseSize = prompt('Base size too small');
+			}
+			if (baseSize > 32) {
+				baseSize = prompt('Base size too large');
+			}
+			if (baseSize < 20) {
+				baseSize = prompt('Base size too small');
+			}
+			if (baseSize > 32) {
+				baseSize = prompt('Base size too large');
+			}
+			if (baseSize < 20) {
+				baseSize = prompt('Base size too small');
+			}
+			if (baseSize > 32) {
+				baseSize = prompt('Base size too large');
+			}
+
+			ang = prompt('At what angle do you want your pyramid to be? (Choose between 40 and 59');
+			if (ang > 59) {
+				ang = prompt('Angle too steep, the pyramid will collapse. Try again.');
+			}
+			if (ang < 40) {
+				ang = prompt('Angle too low, the pyramid will collapse. Try again.');
+			}
+			if (ang > 59) {
+				ang = prompt('Angle too steep, the pyramid will collapse. Try again.');
+			}
+			if (ang < 40) {
+				ang = prompt('Angle too low, the pyramid will collapse. Try again.');
+			}
+			if (ang > 59) {
+				ang = prompt('Angle too steep, the pyramid will collapse. Try again.');
+			}
+			if (ang < 40) {
+				ang = prompt('Angle too low, the pyramid will collapse. Try again.');
+			}
+			
+			$('#container').css('height',String(baseSize * 16) + "px");
+			$('#container').css('width',String(baseSize * 16) + "px");
+		
+
+			builder = new grid(baseSize);
+			builder.setActiveStone("roughLimestone","roughLimestoneCont");
+
+			if (readCookie('istut') == 0) {
+				alert('Instructions: Build a pyramid using the editor! Click on different layers to change each stage (layer) of the pyramid. \n\n The Tura limestone and cut limestone sections have already been automatically generated for you - its up to you to add the rough limestone and the hollow portions of your pyramid. \n\n Click on different block types in the controls sidebar, and then drag on the editor to produce that block type \n\n After you finish your pyramid, click the "Make Pyramid" button to render it on your screen. Drag the sliders to show the different parts of the pyramid more clearly or less clearly.\n\n To make another pyramid or to reset your pyramid, click the "Restart" button on the right. \n\n If you don\'t want to make your own pyramid, but just want to play with a model, click the "Load Sample Button" on the right. It\'s a very rough model of Khufu\'s Great Pyramid.');
+				createCookie('istut',1,100);
+			}
+
+			builder.init(0);
+			builder.loadStage(1);
+			builder.loadStage(0);
+			for (var qq = 0; qq < Math.ceil(baseSize/2); qq++) {
+				builder.loadStage(qq);
+			}
+			builder.loadStage(0);
+
+			function createCookie(name,value,days) {
+				if (days) {
+					var date = new Date();
+					date.setTime(date.getTime()+(days*24*60*60*1000));
+					var expires = "; expires="+date.toGMTString();
+				}
+
+				else var expires = "";
+				document.cookie = name+"="+value+expires+"; path=/";
+				}
+
+			function readCookie(name) {
+				var nameEQ = name + "=";
+				var ca = document.cookie.split(';');
+				for(var i=0;i < ca.length;i++) {
+					var c = ca[i];
+					while (c.charAt(0)==' ') c = c.substring(1,c.length);
+					if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+				}
+			return 0;
+			}
+
+			function alertHelp() {
+				alert('Instructions: Build a pyramid using the editor! Click on different layers to change each stage (layer) of the pyramid. \n\n The Tura limestone and cut limestone sections have already been automatically generated for you - its up to you to add the rough limestone and the hollow portions of your pyramid. \n\n Click on different block types in the controls sidebar, and then drag on the editor to produce that block type \n\n After you finish your pyramid, click the "Make Pyramid" button to render it on your screen. Drag the sliders to show the different parts of the pyramid more clearly or less clearly.\n\n To make another pyramid or to reset your pyramid, click the "Restart" button on the right. \n\n If you don\'t want to make your own pyramid, but just want to play with a model, click the "Load Sample Button" on the right. It\'s a very rough model of Khufu\'s Great Pyramid.');
+			}
+		</script>
+		<div id='restartsidebar'>
+			<div class='stage2' onclick = 'alertHelp();' style='border-bottom:#000 1px solid;'>Help</div>
+			<p></p>
+			<div class='stage2' onclick = 'location.reload();' style='border-bottom:#000 1px solid;'>Restart</div>
+			<p></p>
+			<div class='stage2' onclick = 'modelCustom({"spaces":[{"x":3,"y":19,"z":0},{"x":3,"y":20,"z":0},{"x":3,"y":21,"z":0},{"x":3,"y":22,"z":0},{"x":3,"y":23,"z":0},{"x":4,"y":19,"z":0},{"x":4,"y":20,"z":0},{"x":4,"y":21,"z":0},{"x":4,"y":22,"z":0},{"x":4,"y":23,"z":0},{"x":5,"y":19,"z":0},{"x":5,"y":20,"z":0},{"x":5,"y":21,"z":0},{"x":5,"y":22,"z":0},{"x":5,"y":23,"z":0},{"x":6,"y":19,"z":0},{"x":6,"y":20,"z":0},{"x":6,"y":21,"z":0},{"x":6,"y":22,"z":0},{"x":6,"y":23,"z":0},{"x":7,"y":19,"z":0},{"x":7,"y":20,"z":0},{"x":7,"y":21,"z":0},{"x":7,"y":22,"z":0},{"x":7,"y":23,"z":0},{"x":8,"y":21,"z":0},{"x":9,"y":21,"z":0},{"x":10,"y":21,"z":0},{"x":7,"y":21,"z":1},{"x":8,"y":21,"z":1},{"x":9,"y":21,"z":1},{"x":10,"y":21,"z":1},{"x":11,"y":21,"z":1},{"x":9,"y":21,"z":2},{"x":10,"y":21,"z":2},{"x":11,"y":21,"z":2},{"x":12,"y":21,"z":2},{"x":23,"y":17,"z":2},{"x":23,"y":18,"z":2},{"x":23,"y":19,"z":2},{"x":24,"y":17,"z":2},{"x":24,"y":18,"z":2},{"x":24,"y":19,"z":2},{"x":10,"y":21,"z":3},{"x":11,"y":21,"z":3},{"x":12,"y":21,"z":3},{"x":13,"y":21,"z":3},{"x":14,"y":21,"z":3},{"x":15,"y":22,"z":3},{"x":15,"y":23,"z":3},{"x":15,"y":24,"z":3},{"x":18,"y":18,"z":3},{"x":19,"y":18,"z":3},{"x":20,"y":18,"z":3},{"x":21,"y":18,"z":3},{"x":22,"y":18,"z":3},{"x":23,"y":17,"z":3},{"x":23,"y":18,"z":3},{"x":23,"y":19,"z":3},{"x":24,"y":17,"z":3},{"x":24,"y":18,"z":3},{"x":24,"y":19,"z":3},{"x":13,"y":21,"z":4},{"x":14,"y":21,"z":4},{"x":15,"y":13,"z":4},{"x":15,"y":14,"z":4},{"x":15,"y":15,"z":4},{"x":15,"y":16,"z":4},{"x":15,"y":17,"z":4},{"x":15,"y":18,"z":4},{"x":15,"y":19,"z":4},{"x":15,"y":20,"z":4},{"x":15,"y":21,"z":4},{"x":16,"y":18,"z":4},{"x":17,"y":18,"z":4},{"x":18,"y":18,"z":4},{"x":19,"y":18,"z":4},{"x":15,"y":12,"z":5},{"x":15,"y":13,"z":5},{"x":15,"y":14,"z":5},{"x":15,"y":15,"z":5},{"x":15,"y":16,"z":5},{"x":15,"y":17,"z":5},{"x":15,"y":18,"z":5},{"x":15,"y":19,"z":5},{"x":15,"y":20,"z":5},{"x":14,"y":12,"z":6},{"x":14,"y":13,"z":6},{"x":15,"y":12,"z":6},{"x":15,"y":13,"z":6},{"x":15,"y":14,"z":6},{"x":15,"y":15,"z":6},{"x":15,"y":16,"z":6},{"x":15,"y":17,"z":6},{"x":15,"y":18,"z":6},{"x":15,"y":19,"z":6},{"x":16,"y":12,"z":6},{"x":16,"y":13,"z":6},{"x":14,"y":12,"z":7},{"x":14,"y":13,"z":7},{"x":15,"y":12,"z":7},{"x":15,"y":13,"z":7},{"x":16,"y":12,"z":7},{"x":16,"y":13,"z":7},{"x":13,"y":12,"z":8},{"x":14,"y":12,"z":8},{"x":14,"y":13,"z":8},{"x":15,"y":12,"z":8},{"x":15,"y":13,"z":8},{"x":16,"y":12,"z":8},{"x":16,"y":13,"z":8},{"x":17,"y":12,"z":8},{"x":18,"y":12,"z":8},{"x":12,"y":12,"z":9},{"x":18,"y":12,"z":9}],"rects":[{"x1":{"e":31,"s":0,"y":0},"x2":{"e":31,"s":0,"y":31},"y1":{"e":31,"s":0,"x":0},"y2":{"e":31,"s":0,"x":31}},{"x1":{"e":30,"s":1,"y":1},"x2":{"e":30,"s":1,"y":30},"y1":{"e":30,"s":1,"x":1},"y2":{"e":30,"s":1,"x":30}},{"x1":{"e":29,"s":2,"y":2},"x2":{"e":29,"s":2,"y":29},"y1":{"e":29,"s":2,"x":2},"y2":{"e":29,"s":2,"x":29}},{"x1":{"e":28,"s":3,"y":3},"x2":{"e":28,"s":3,"y":28},"y1":{"e":28,"s":3,"x":3},"y2":{"e":28,"s":3,"x":28}},{"x1":{"e":27,"s":4,"y":4},"x2":{"e":27,"s":4,"y":27},"y1":{"e":27,"s":4,"x":4},"y2":{"e":27,"s":4,"x":27}},{"x1":{"e":26,"s":5,"y":5},"x2":{"e":26,"s":5,"y":26},"y1":{"e":26,"s":5,"x":5},"y2":{"e":26,"s":5,"x":26}},{"x1":{"e":25,"s":6,"y":6},"x2":{"e":25,"s":6,"y":25},"y1":{"e":25,"s":6,"x":6},"y2":{"e":25,"s":6,"x":25}},{"x1":{"e":24,"s":7,"y":7},"x2":{"e":24,"s":7,"y":24},"y1":{"e":24,"s":7,"x":7},"y2":{"e":24,"s":7,"x":24}},{"x1":{"e":23,"s":8,"y":8},"x2":{"e":23,"s":8,"y":23},"y1":{"e":23,"s":8,"x":8},"y2":{"e":23,"s":8,"x":23}},{"x1":{"e":22,"s":9,"y":9},"x2":{"e":22,"s":9,"y":22},"y1":{"e":22,"s":9,"x":9},"y2":{"e":22,"s":9,"x":22}},{"x1":{"e":21,"s":10,"y":10},"x2":{"e":21,"s":10,"y":21},"y1":{"e":21,"s":10,"x":10},"y2":{"e":21,"s":10,"x":21}},{"x1":{"e":20,"s":11,"y":11},"x2":{"e":20,"s":11,"y":20},"y1":{"e":20,"s":11,"x":11},"y2":{"e":20,"s":11,"x":20}},{"x1":{"e":19,"s":12,"y":12},"x2":{"e":19,"s":12,"y":19},"y1":{"e":19,"s":12,"x":12},"y2":{"e":19,"s":12,"x":19}},{"x1":{"e":18,"s":13,"y":13},"x2":{"e":18,"s":13,"y":18},"y1":{"e":18,"s":13,"x":13},"y2":{"e":18,"s":13,"x":18}},{"x1":{"e":17,"s":14,"y":14},"x2":{"e":17,"s":14,"y":17},"y1":{"e":17,"s":14,"x":14},"y2":{"e":17,"s":14,"x":17}},{"x1":{"e":16,"s":15,"y":15},"x2":{"e":16,"s":15,"y":16},"y1":{"e":16,"s":15,"x":15},"y2":{"e":16,"s":15,"x":16}}]},48)' style='border-bottom:#000 1px solid;'>Load Sample Pyramid (Great Pyramid)</div>
+		</div>
+	</body>
+</html>
