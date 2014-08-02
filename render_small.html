@@ -89,7 +89,6 @@
 				parent.unmodel();
 			}
 			function renderIt(dataToRender,ang) {
-				console.log(dataToRender);
 				var deg = ang;
 				window.zoom = 40;
 				window.rotationSpeed = 1750;
@@ -295,8 +294,6 @@
 						litCube.position.z = -(sy) + largestY/2 - .75;
 						litCube.position.x = -(sx - (1 - Math.abs(sx-ex))/2) + largestX/2 - 1.1;
 						litCube.position.y = z * yScale - 2 * yScale;
-						console.log(litCube.geometry.vertices[0],litCube.geometry.vertices[5]);
-						debugger;
 						litCube.geometry.vertices[0].setZ(litCube.geometry.vertices[0].z - .6);
 						litCube.geometry.vertices[5].setZ(litCube.geometry.vertices[5].z - .6);
 						largecubes.push(litCube);
@@ -308,7 +305,6 @@
 						litCube.position.z = -(sy) + largestY/2 - .25;
 						litCube.position.x = -(sx - (1 - Math.abs(sx-ex))/2) + largestX/2 - 0.1;
 						litCube.position.y = z * yScale - 2 * yScale;
-						console.log(litCube.geometry.vertices[0],litCube.geometry.vertices[5]);
 						litCube.geometry.vertices[4].setZ(litCube.geometry.vertices[4].z + .6);
 						litCube.geometry.vertices[1].setZ(litCube.geometry.vertices[1].z + .6);
 						largecubes.push(litCube);
